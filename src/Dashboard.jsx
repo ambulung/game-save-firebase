@@ -656,7 +656,7 @@ export default function Dashboard() {
         {/* Sidebar */}
         <aside className="w-64 fixed top-0 left-0 h-screen bg-[#20212b] flex flex-col items-center py-8 shadow-lg z-40">
           {user && (
-            <div className="flex flex-col items-center w-full">
+            <div className="flex flex-col items-center w-full h-full">
               <div className="flex flex-row items-center w-full px-4">
                 <img src={user.photoURL || '/default.jpg'} alt="User avatar" className="w-14 h-14 object-cover rounded-xl border border-gray-700" onError={e => { e.target.onerror = null; e.target.src = '/default.jpg'; }} />
                 <div className="ml-4 flex flex-col">
@@ -679,7 +679,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-              <nav className="w-full flex flex-col items-center mt-8">
+              <nav className="w-full flex flex-col items-center mt-8 flex-grow">
                 <button onClick={() => setShowSettings(true)} className="w-11/12 px-4 py-2 mb-2 bg-[#353646] rounded hover:bg-[#353656] text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-400">Settings</button>
                 <button
                   onClick={() => fileInputRef.current && fileInputRef.current.click()}
@@ -706,16 +706,18 @@ export default function Dashboard() {
                     'Sign Out'
                   )}
                 </button>
-                <a
-                  href="https://github.com/ambulung/game-save-firebase"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-11/12 mt-auto flex items-center justify-center px-4 py-2 bg-[#23232a] border border-gray-700 rounded hover:bg-[#353646] text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 mb-2"
-                >
-                  {githubIcon}
-                  GitHub
-                </a>
               </nav>
+              <div className="flex-grow" />
+              <a
+                href="https://github.com/ambulung/game-save-firebase"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-11/12 flex items-center justify-center px-4 py-2 bg-[#23232a] border border-gray-700 rounded hover:bg-[#353646] text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 mb-2"
+                style={{ marginTop: 'auto' }}
+              >
+                {githubIcon}
+                GitHub
+              </a>
             </div>
           )}
         </aside>
