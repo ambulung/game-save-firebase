@@ -6,6 +6,23 @@ import App from './App.jsx';
 import Login from './Login.jsx';
 import Dashboard from './Dashboard.jsx';
 import './index.css';
+import { useEffect, useState } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './firebase';
+
+function AuthRedirect() {
+  const [checking, setChecking] = useState(true);
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setChecking(false);
+    });
+    return () => unsub();
+  }, []);
+  if (checking) return null; // or a loading spinner
+  return user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />;
+}
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -14,7 +31,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<AuthRedirect />} />
         </Routes>
       </BrowserRouter>
     </HelmetProvider>

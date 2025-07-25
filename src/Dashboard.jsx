@@ -643,7 +643,7 @@ export default function Dashboard() {
           )}
           {/* File List */}
           <section className="flex-1 flex flex-col items-center justify-start px-8 py-8 mt-[104px]">
-            <div className="w-full max-w-3xl bg-[#23232a] rounded-xl shadow-xl p-6">
+            <div className="w-full bg-[#23232a] rounded-xl shadow-xl p-6">
               <div className="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div className="text-lg font-semibold mb-2 md:mb-0">Your Save Files</div>
                 <div className="flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto">
