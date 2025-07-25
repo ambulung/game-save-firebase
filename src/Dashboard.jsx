@@ -668,7 +668,7 @@ export default function Dashboard() {
                         ></div>
                       </div>
                       <span className="text-[10px] text-gray-300 whitespace-nowrap min-w-[32px] text-right">
-                        {`${Math.min((getTotalUsedSize() / (50 * 1024 * 1024)) * 100, 100).toFixed(0)}%`}
+                        {`${Math.min((getTotalUsedSize() / (50 * 1024 * 1024)) * 100, 100).toFixed(1)}%`}
                       </span>
                     </div>
                   </div>
