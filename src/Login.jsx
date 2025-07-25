@@ -52,13 +52,13 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    if (!recaptchaValue) {
-      setError('Please complete the reCAPTCHA.');
-      setLoading(false);
-      return;
-    }
     try {
       if (isSignUp) {
+        if (!recaptchaValue) {
+          setError('Please complete the reCAPTCHA.');
+          setLoading(false);
+          return;
+        }
         if (password !== confirmPassword) {
           setError('Passwords do not match.');
           setLoading(false);
@@ -155,14 +155,16 @@ export default function Login() {
                 </div>
               </>
             )}
-            <div className="flex justify-center my-2">
-              <ReCAPTCHA
-                ref={recaptchaRef}
-                sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                theme="dark"
-                onChange={setRecaptchaValue}
-              />
-            </div>
+            {isSignUp && (
+              <div className="flex justify-center my-2">
+                <ReCAPTCHA
+                  ref={recaptchaRef}
+                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                  theme="dark"
+                  onChange={setRecaptchaValue}
+                />
+              </div>
+            )}
             <button
               type="submit"
               className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-700 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 font-semibold"

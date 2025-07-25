@@ -87,10 +87,10 @@ function SetupModal({ files, fileLabels, onLabelChange, onConfirm, onCancel, upl
   );
 }
 
-function SettingsModal({ user, open, onClose, onSave, uploading, progress }) {
+function SettingsModal({ user, open, onClose, onSave, uploading, progress, onDeleteAccount }) {
   const [displayName, setDisplayName] = useState(user.displayName || '');
   const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(user.photoURL || '');
+  const [imagePreview, setImagePreview] = useState(user.photoURL || '/default.jpg');
   const [error, setError] = useState('');
 
   // Clean up blob URLs
@@ -139,7 +139,7 @@ function SettingsModal({ user, open, onClose, onSave, uploading, progress }) {
         <h2 className="text-2xl font-bold mb-6 text-white">Profile Settings</h2>
         <div className="flex flex-row gap-8 items-center mb-6">
           <div className="flex flex-col items-center flex-shrink-0">
-            <img src={imagePreview || '/default.jpg'} alt="Profile preview" className="w-32 h-32 object-cover rounded-xl border-2 border-gray-700 mb-3 shadow" />
+            <img src={imagePreview || '/default.jpg'} alt="Profile preview" className="w-32 h-32 object-cover rounded-xl border-2 border-gray-700 mb-3 shadow" onError={e => { e.target.onerror = null; e.target.src = '/default.jpg'; }} />
             <label className="block w-full text-xs text-center text-gray-300 cursor-pointer bg-[#353646] hover:bg-[#353656] px-3 py-1 rounded transition">
               Change Image
               <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
@@ -166,9 +166,10 @@ function SettingsModal({ user, open, onClose, onSave, uploading, progress }) {
           </div>
         )}
         {error && <div className="text-red-400 text-sm mb-4">{error}</div>}
-        <div className="flex justify-end gap-3 mt-2">
+        <div className="flex flex-col md:flex-row justify-end gap-3 mt-2">
           <button onClick={handleClose} className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-800 text-white">Cancel</button>
           <button onClick={handleSave} className="px-4 py-2 rounded bg-blue-700 hover:bg-blue-800 text-white font-semibold">Save</button>
+          <button onClick={onDeleteAccount} className="px-4 py-2 rounded bg-red-700 hover:bg-red-800 text-white font-semibold md:ml-auto mt-3 md:mt-0">Delete Account</button>
         </div>
       </div>
     </div>
@@ -216,6 +217,10 @@ export default function Dashboard() {
   // Search state
   const [search, setSearch] = useState('');
   const [loggingOut, setLoggingOut] = useState(false);
+  // Add state for delete confirmation modal
+  const [deleteModal, setDeleteModal] = useState({ open: false, value: '', error: '' });
+  // In Dashboard component, add state for current uploading file name
+  const [currentUploadingFile, setCurrentUploadingFile] = useState('');
 
   const handleLocationChange = (fileName, idx, value) => {
     setSaveLocations((prev) => ({
@@ -361,6 +366,7 @@ export default function Dashboard() {
       }
       setUploading(true);
       setProgress(0);
+      setCurrentUploadingFile(file.name);
       try {
         const storage = getStorage();
         const fileRef = ref(storage, `${user.uid}/${file.name}`);
@@ -379,6 +385,7 @@ export default function Dashboard() {
       } finally {
         setUploading(false);
         setProgress(0);
+        setCurrentUploadingFile('');
       }
     }
     if (!anyError && fileInputRef.current) fileInputRef.current.value = '';
@@ -548,6 +555,48 @@ export default function Dashboard() {
     }
   }, [toast]);
 
+  // Add handler to open delete modal
+  const handleDeleteAccountClick = () => {
+    setDeleteModal({ open: true, value: '', error: '' });
+    setShowSettings(false);
+  };
+  // Update handleDeleteAccount to delete all user files from storage before deleting the user
+  const handleDeleteAccount = async () => {
+    if (deleteModal.value !== 'DELETE') {
+      setDeleteModal((prev) => ({ ...prev, error: 'You must type DELETE to confirm.' }));
+      return;
+    }
+    try {
+      // Delete all files in user's storage folder
+      const storage = getStorage();
+      const userFolderRef = ref(storage, `${user.uid}/`);
+      const avatarRef = ref(storage, `avatars/${user.uid}/avatar.jpg`);
+      // Delete all save files
+      try {
+        const listRes = await listAll(userFolderRef);
+        await Promise.all(listRes.items.map(fileRef => deleteObject(fileRef)));
+      } catch (err) {
+        // Ignore if folder doesn't exist
+      }
+      // Delete avatar
+      try {
+        await deleteObject(avatarRef);
+      } catch (err) {
+        // Ignore if avatar doesn't exist
+      }
+      // Now delete the user
+      await user.delete();
+      setDeleteModal({ open: false, value: '', error: '' });
+      setToast({ message: 'Account and all files deleted successfully.', type: 'success' });
+      setTimeout(() => {
+        navigate('/login', { replace: true });
+        window.location.reload();
+      }, 1500);
+    } catch (err) {
+      setDeleteModal((prev) => ({ ...prev, error: err.message }));
+    }
+  };
+
   return (
     <Fragment>
       <Helmet>
@@ -560,19 +609,51 @@ export default function Dashboard() {
           Copied to clipboard!
         </div>
       )}
+      {uploading && (
+        <div className="fixed top-0 left-0 w-full z-50 flex flex-col items-center">
+          <div className="w-full max-w-md bg-[#23232a] rounded-b-xl shadow-xl px-6 py-4 flex flex-col items-center border-b-2 border-blue-700">
+            <div className="w-full flex justify-between items-center mb-2">
+              <span className="text-sm text-blue-300 font-semibold">Uploading: {currentUploadingFile}</span>
+              <span className="text-xs text-blue-400">{progress.toFixed(0)}%</span>
+            </div>
+            <div className="w-full bg-gray-700 rounded h-2 overflow-hidden">
+              <div className="bg-blue-500 h-2 transition-all duration-200" style={{ width: `${progress}%` }}></div>
+            </div>
+          </div>
+        </div>
+      )}
       <ConfirmationModal
         open={confirmModal.open}
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
         onCancel={() => setConfirmModal({ open: false, message: '', onConfirm: null })}
       />
+      {deleteModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+          <div className="bg-[#23232a] rounded-2xl shadow-2xl p-8 w-full max-w-xs flex flex-col items-center">
+            <div className="text-lg font-semibold text-white mb-4 text-center">Type DELETE to confirm account deletion.<br/>This action cannot be undone.</div>
+            <input
+              type="text"
+              className="px-4 py-2 rounded bg-gray-800 border border-gray-600 text-white focus:outline-none focus:ring-2 focus:ring-red-400 text-center mb-3"
+              placeholder="Type DELETE"
+              value={deleteModal.value}
+              onChange={e => setDeleteModal((prev) => ({ ...prev, value: e.target.value, error: '' }))}
+            />
+            {deleteModal.error && <div className="text-red-400 text-xs mb-2">{deleteModal.error}</div>}
+            <div className="flex gap-4 mt-2">
+              <button onClick={() => setDeleteModal({ open: false, value: '', error: '' })} className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-800 text-white">Cancel</button>
+              <button onClick={handleDeleteAccount} className="px-4 py-2 rounded bg-red-700 hover:bg-red-800 text-white font-semibold">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="min-h-screen w-full flex bg-[#18181b] text-white font-sans">
         {/* Sidebar */}
         <aside className="w-64 fixed top-0 left-0 h-screen bg-[#20212b] flex flex-col items-center py-8 shadow-lg z-40">
           {user && (
             <div className="flex flex-col items-center w-full">
               <div className="flex flex-row items-center w-full px-4">
-                <img src={user.photoURL || '/default.jpg'} alt="User avatar" className="w-14 h-14 object-cover rounded-xl border border-gray-700" />
+                <img src={user.photoURL || '/default.jpg'} alt="User avatar" className="w-14 h-14 object-cover rounded-xl border border-gray-700" onError={e => { e.target.onerror = null; e.target.src = '/default.jpg'; }} />
                 <div className="ml-4 flex flex-col">
                   <div className="text-sm font-medium truncate">{user.displayName || user.email}</div>
                   <div className="mt-2 w-full">
@@ -738,6 +819,7 @@ export default function Dashboard() {
           onSave={handleSettingsSave}
           uploading={uploading}
           progress={progress}
+          onDeleteAccount={handleDeleteAccountClick}
         />
       )}
     </Fragment>
