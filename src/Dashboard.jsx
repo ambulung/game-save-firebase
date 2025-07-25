@@ -884,7 +884,7 @@ export default function Dashboard() {
                         <a
                           href={downloadUrls[file.name]}
                           download={fileMeta[file.name]?.customMetadata?.label ? `${fileMeta[file.name].customMetadata.label}${file.name.substring(file.name.lastIndexOf('.'))}` : file.name}
-                          className="ml-2 px-2 py-1 text-xs bg-blue-700 rounded hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                          className="ml-2 px-2 py-1 text-xs bg-blue-700 rounded hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-400 flex justify-center items-center text-center w-24"
                           aria-label={`Download ${file.name}`}
                           title="Download"
                         >
