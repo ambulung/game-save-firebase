@@ -361,11 +361,6 @@ export default function Dashboard() {
       return;
     }
     for (const file of files) {
-      if (file.size > MAX_FILE_SIZE) {
-        setToast({ message: `File ${file.name} is too large. Max 20MB.`, type: 'error' });
-        anyError = true;
-        continue;
-      }
       setUploading(true);
       setProgress(0);
       setCurrentUploadingFile(file.name);
@@ -655,8 +650,81 @@ export default function Dashboard() {
         </div>
       )}
       <div className="min-h-screen w-full flex bg-[#18181b] text-white font-sans">
-        {/* Sidebar */}
-        <aside className={`w-64 fixed top-0 left-0 h-screen bg-[#20212b] flex flex-col items-center py-8 shadow-lg z-40 transition-transform duration-300 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:block`}>
+        {/* Sidebar and overlay for mobile */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-40 md:hidden" style={{ pointerEvents: 'auto' }}>
+            <div className="absolute inset-0 bg-black bg-opacity-40" onClick={() => setSidebarOpen(false)} />
+            <aside className="w-64 fixed top-0 left-0 h-screen bg-[#20212b] flex flex-col items-center py-8 shadow-lg z-50 transition-transform duration-300 transform translate-x-0 md:translate-x-0 md:static md:block">
+              {user && (
+                <div className="flex flex-col items-center w-full h-full">
+                  <div className="flex flex-row items-center w-full px-4">
+                    <img src={user.photoURL || '/default.jpg'} alt="User avatar" className="w-14 h-14 object-cover rounded-xl border border-gray-700" onError={e => { e.target.onerror = null; e.target.src = '/default.jpg'; }} />
+                    <div className="ml-4 flex flex-col">
+                      <div className="text-sm font-medium truncate">{user.displayName || user.email}</div>
+                      <div className="mt-2 w-full">
+                        <div className="text-[10px] text-gray-300 whitespace-nowrap mb-1">
+                          Storage Used: {(getTotalUsedSize() / (1024 * 1024)).toFixed(1)} / 50.0 MB
+                        </div>
+                        <div className="flex items-center gap-2 w-full">
+                          <div className="flex-1 h-2 bg-gray-800 border border-gray-700 rounded-full overflow-hidden relative">
+                            <div
+                              className="bg-blue-500 h-2 absolute top-0 left-0 rounded-full"
+                              style={{ width: `${Math.max(Math.min((getTotalUsedSize() / (50 * 1024 * 1024)) * 100, 100), getTotalUsedSize() > 0 ? 2 : 0)}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-[10px] text-gray-300 whitespace-nowrap min-w-[32px] text-right">
+                            {`${Math.min((getTotalUsedSize() / (50 * 1024 * 1024)) * 100, 100).toFixed(1)}%`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <nav className="w-full flex flex-col items-center mt-8 flex-grow">
+                    <button onClick={() => setShowSettings(true)} className="w-11/12 px-4 py-2 mb-2 bg-[#353646] rounded hover:bg-[#353656] text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-400">Settings</button>
+                    <button
+                      onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                      className="w-11/12 px-4 py-2 mb-2 bg-blue-600 rounded hover:bg-blue-700 text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    >
+                      Upload Files
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={handleFileInputChange}
+                      disabled={uploading}
+                      aria-label="Upload files"
+                    />
+                    <button onClick={handleSignOut} className="w-11/12 px-4 py-2 bg-red-600 rounded hover:bg-red-700 text-white text-xs focus:outline-none focus:ring-2 focus:ring-red-400 flex items-center justify-center" disabled={loggingOut}>
+                      {loggingOut ? (
+                        <span className="flex items-center gap-2">
+                          <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeOpacity=".25" /><path d="M12 6v6l4 2" /></svg>
+                          Logging out...
+                        </span>
+                      ) : (
+                        'Sign Out'
+                      )}
+                    </button>
+                  </nav>
+                  <div className="flex-grow" />
+                  <a
+                    href="https://github.com/ambulung/game-save-firebase"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-11/12 flex items-center justify-center px-4 py-2 bg-[#23232a] border border-gray-700 rounded hover:bg-[#353646] text-white text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-400 mb-2"
+                    style={{ marginTop: 'auto' }}
+                  >
+                    {githubIcon}
+                    GitHub
+                  </a>
+                </div>
+              )}
+            </aside>
+          </div>
+        )}
+        {/* Desktop sidebar */}
+        <aside className="w-64 hidden md:flex fixed top-0 left-0 h-screen bg-[#20212b] flex-col items-center py-8 shadow-lg z-40">
           {user && (
             <div className="flex flex-col items-center w-full h-full">
               <div className="flex flex-row items-center w-full px-4">
@@ -732,9 +800,6 @@ export default function Dashboard() {
           <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
         </button>
         {/* Overlay for sidebar on mobile */}
-        {sidebarOpen && (
-          <div className="fixed inset-0 z-40 bg-black bg-opacity-40 md:hidden" onClick={() => setSidebarOpen(false)} />
-        )}
         {/* Main Content */}
         <main className="flex-1 flex flex-col min-h-screen md:ml-64">
           {/* Header */}
@@ -823,7 +888,7 @@ export default function Dashboard() {
                           aria-label={`Download ${file.name}`}
                           title="Download"
                         >
-                          {icons.download}
+                          Download
                         </a>
                         <button
                           onClick={() => handleDelete(file)}
@@ -835,7 +900,7 @@ export default function Dashboard() {
                           {deleting === file.name ? (
                             <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeOpacity=".25" /><path d="M12 6v6l4 2" /></svg>
                           ) : (
-                            icons.delete
+                            'Delete'
                           )}
                         </button>
                       </div>
