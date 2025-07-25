@@ -221,6 +221,8 @@ export default function Dashboard() {
   const [deleteModal, setDeleteModal] = useState({ open: false, value: '', error: '' });
   // In Dashboard component, add state for current uploading file name
   const [currentUploadingFile, setCurrentUploadingFile] = useState('');
+  // In Dashboard component, add state for sidebar visibility
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLocationChange = (fileName, idx, value) => {
     setSaveLocations((prev) => ({
@@ -654,7 +656,7 @@ export default function Dashboard() {
       )}
       <div className="min-h-screen w-full flex bg-[#18181b] text-white font-sans">
         {/* Sidebar */}
-        <aside className="w-64 fixed top-0 left-0 h-screen bg-[#20212b] flex flex-col items-center py-8 shadow-lg z-40">
+        <aside className={`w-64 fixed top-0 left-0 h-screen bg-[#20212b] flex flex-col items-center py-8 shadow-lg z-40 transition-transform duration-300 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 md:static md:block`}>
           {user && (
             <div className="flex flex-col items-center w-full h-full">
               <div className="flex flex-row items-center w-full px-4">
@@ -721,11 +723,30 @@ export default function Dashboard() {
             </div>
           )}
         </aside>
+        {/* Hamburger button for mobile */}
+        <button
+          className="md:hidden fixed top-6 left-4 z-50 bg-[#23232a] p-2 rounded-lg shadow-lg border border-gray-700 focus:outline-none"
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Open sidebar"
+        >
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+        </button>
+        {/* Overlay for sidebar on mobile */}
+        {sidebarOpen && (
+          <div className="fixed inset-0 z-40 bg-black bg-opacity-40 md:hidden" onClick={() => setSidebarOpen(false)} />
+        )}
         {/* Main Content */}
-        <main className="flex-1 flex flex-col min-h-screen ml-64">
+        <main className="flex-1 flex flex-col min-h-screen md:ml-64">
           {/* Header */}
-          <header className="w-full fixed top-0 left-64 right-0 flex items-center px-8 py-6 bg-[#23232a] border-b border-gray-800 shadow z-30">
-            <h1 className="text-2xl font-bold tracking-tight">Game Save Manager</h1>
+          <header className="w-full fixed top-0 left-0 md:left-64 right-0 flex items-center px-4 md:px-8 py-6 bg-[#23232a] border-b border-gray-800 shadow z-30">
+            <button
+              className="md:hidden mr-4"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open sidebar"
+            >
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+            </button>
+            <h1 className="text-2xl font-bold tracking-tight w-full text-center md:text-left">Game Save Manager</h1>
           </header>
           {/* Setup Modal */}
           {showSetupModal && (
